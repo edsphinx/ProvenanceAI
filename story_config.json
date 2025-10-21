@@ -1,0 +1,44 @@
+{
+  "network": {
+    "name": "Story Iliad Testnet",
+    "chainId": 1513,
+    "currency": "IP",
+    "rpcUrl": "https://testnet.storyrpc.io",
+    "explorerUrl": "https://testnet.storyscan.xyz",
+    "faucetUrl": "https://faucet.story.foundation"
+  },
+  "contracts": {
+    "note": "These addresses need to be obtained from Story Protocol documentation or deployment files",
+    "ipAssetRegistry": "REPLACE_WITH_ACTUAL_ADDRESS",
+    "licensingModule": "REPLACE_WITH_ACTUAL_ADDRESS",
+    "royaltyModule": "REPLACE_WITH_ACTUAL_ADDRESS",
+    "disputeModule": "REPLACE_WITH_ACTUAL_ADDRESS"
+  },
+  "aiAgent": {
+    "title": "Provenance AI Model",
+    "description": "The parent AI Agent that generates IP assets for Provenance AI. This agent represents the AI model used to create derivative works.",
+    "createdAt": "1740005219",
+    "creators": [
+      {
+        "name": "Provenance AI Team",
+        "address": "REPLACE_WITH_YOUR_ADDRESS",
+        "contributionPercent": 100
+      }
+    ],
+    "image": "https://ipfs.io/ipfs/bafybeigi3k77t5h5aefwpzvx3uiomuavdvqwn5rb5uhd7i7xcq466wvute",
+    "imageHash": "0x64ccc40de203f218d16bb90878ecca4338e566ab329bf7be906493ce77b1551a",
+    "mediaUrl": "https://ipfs.io/ipfs/bafybeigi3k77t5h5aefwpzvx3uiomuavdvqwn5rb5uhd7i7xcq466wvute",
+    "mediaHash": "0x64ccc40de203f218d16bb90878ecca4338e566ab329bf7be906493ce77b1551a",
+    "mediaType": "image/webp",
+    "aiMetadata": {
+      "characterFileUrl": "https://ipfs.io/ipfs/bafkreic6eu4hlnwx46soib62rgkhhmlieko67dggu6bzk7bvtfusqsknfu",
+      "characterFileHash": "0x5e253875b6d7e7a4e407da899473b168229def8cc6a783957c35996928494d2d"
+    },
+    "ipType": "AI Agent",
+    "tags": ["AI Agent", "Generative AI", "Provenance"]
+  },
+  "deployment": {
+    "parentAiModelIpId": "WILL_BE_SET_AFTER_REGISTRATION",
+    "canisterEvmAddress": "WILL_BE_DERIVED_FROM_ECDSA"
+  }
+}

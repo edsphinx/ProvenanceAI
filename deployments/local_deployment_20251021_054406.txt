@@ -1,0 +1,21 @@
+Provenance AI - Deployment Information
+=====================================
+
+Timestamp:    Tue Oct 21 05:44:06 AM CST 2025
+Network:      local
+Canister ID:  uxrrr-q7777-77774-qaaaq-cai
+EVM Address:  ERROR
+Principal:    vrich-qjrlz-irm25-5x467-amjaj-bek75-4nwih-tapl6-rbexo-ynrez-vae
+
+Phase:        1 (Brain Canister with AI Generation)
+Status:       Deployed Successfully
+
+Configuration:
+- DeepSeek API:     Configured
+- Constellation:    https://l0-lb-testnet.constellationnetwork.io
+- Replicate:        
+
+Next Steps:
+1. Fund EVM address: ERROR
+2. Register AI model on Story Protocol
+3. Proceed to Phase 2 implementation
