@@ -69,13 +69,22 @@ pub async fn make_http_request(
     };
 
     // Calculate cycles cost
-    // Formula: (3_000_000 + 60_000 * n) * n + per-byte costs
-    // Where n = number of nodes (typically 13)
-    let request_size = body.as_ref().map_or(0, |b| b.len());
-    let base_cost: u128 = 3_000_000 + (60_000 * 13);
-    let per_request_cost = base_cost * 13;
-    let per_byte_request_cost: u128 = (400 * request_size as u128) + (800 * 1024 * 1024); // Assuming 1MB max response
-    let total_cycles = per_request_cost + per_byte_request_cost;
+    // Formula based on IC documentation:
+    // base: (3_000_000 + 60_000 * nodes) * nodes
+    // per-byte request: 400 * request_bytes * nodes
+    // per-byte response: 800 * max_response_bytes * nodes
+    // Where nodes = 13 for subnet consensus
+    let nodes = 13u128;
+    let request_size = body.as_ref().map_or(0, |b| b.len()) as u128;
+    let max_response_bytes = 1024 * 1024u128; // 1MB
+
+    let base_cost = (3_000_000 + (60_000 * nodes)) * nodes;
+    let request_cost = 400 * request_size * nodes;
+    let response_cost = 800 * max_response_bytes * nodes;
+    let total_cycles = base_cost + request_cost + response_cost;
+
+    // Add 20% buffer for safety
+    let total_cycles = (total_cycles * 12) / 10;
 
     ic_cdk::println!("   💰 Cycles: {}", total_cycles);
 
