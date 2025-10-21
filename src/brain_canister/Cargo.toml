@@ -1,0 +1,28 @@
+[package]
+name = "brain_canister"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# ICP Core
+ic-cdk = "0.13"
+candid = "0.10"
+ic-ledger-types = "0.9"
+
+# Serialization
+serde = "1.0"
+serde_json = "1.0"
+
+# Utilities
+md5 = "0.7"
+getrandom = { version = "0.2", features = ["custom"] }
+
+# L2/EVM Integration Crates
+ethabi = "18.0"
+rlp = "0.5"
+sha3 = "0.10"
+hex = "0.4"
+primitive-types = { version = "0.12", features = ["serde"] }
