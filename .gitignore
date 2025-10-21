@@ -20,6 +20,38 @@ target
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-ARCHITECTURE_LAYER_1_ICP.md
-ARCHITECTURE.md
-PLAN.md
+# ICP/DFX
+.dfx/
+dist/
+node_modules/
+
+# Environment variables - CRITICAL: DO NOT COMMIT API KEYS
+.env
+.env.local
+.env.production
+
+# Secrets and Identity Backups - CRITICAL: DO NOT COMMIT SEED PHRASES
+.secrets/
+**/*IDENTITY_BACKUP*
+**/*seed*
+**/*mnemonic*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cache
+.cache/
+
+#AI
+.claude
