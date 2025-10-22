@@ -111,7 +111,7 @@ fn init(config: CanisterConfig) {
         let mut state = state.borrow_mut();
         state.owner = ic_cdk::caller();
         // TODO: Query this from the RPC on init in production
-        state.evm_nonce = U256::from(6); // Set to current RPC nonce (updated after SimpleNFT deployment)
+        state.evm_nonce = U256::from(7); // Set to current RPC nonce (updated 2025-10-22)
     });
 
     ic_cdk::println!("✅ Brain Canister initialized successfully");
@@ -394,6 +394,46 @@ fn set_nft_contract_address(address: String) {
     });
 
     ic_cdk::println!("NFT contract address set to: {}", address);
+}
+
+// ==============================================================================
+// Story Protocol IP Registration
+// ==============================================================================
+
+/// Register an NFT as an IP Asset on Story Protocol
+///
+/// # Arguments
+/// * `nft_contract_address` - The address of the NFT contract
+/// * `token_id` - The token ID of the NFT to register
+///
+/// # Returns
+/// * `Result<String, String>` - Transaction hash or error
+#[ic_cdk::update]
+async fn register_ip(nft_contract_address: String, token_id: u64) -> Result<String, String> {
+    ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    ic_cdk::println!("📜 REGISTERING NFT AS IP ASSET ON STORY PROTOCOL");
+    ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    ic_cdk::println!("   NFT Contract: {}", nft_contract_address);
+    ic_cdk::println!("   Token ID: {}", token_id);
+
+    let result = story_util::register_nft_as_ip(nft_contract_address, token_id).await;
+
+    match &result {
+        Ok(tx_hash) => {
+            ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            ic_cdk::println!("✅ IP REGISTRATION COMPLETE");
+            ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            ic_cdk::println!("   Transaction Hash: {}", tx_hash);
+        }
+        Err(e) => {
+            ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            ic_cdk::println!("❌ IP REGISTRATION FAILED");
+            ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            ic_cdk::println!("   Error: {}", e);
+        }
+    }
+
+    result
 }
 
 // ==============================================================================

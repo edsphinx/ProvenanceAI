@@ -58,6 +58,7 @@ ProvenanceAI combines three powerful blockchain ecosystems:
 
 1. ✅ **SimpleNFT Deployment**: [`0x5b2b1b0c...762209`](https://aeneid.storyscan.io/tx/0x5b2b1b0cffbbc297ccd4d4ef74d81285ce59291a657c92eb8990c6a8e5762209)
 2. ✅ **NFT Mint #1**: [`0xa1b0eea1...96ac03`](https://aeneid.storyscan.io/tx/0xa1b0eea1bedf69c9c2725daae560ae2b5df1cc26e30b3e131bbb58db4196ac03)
+3. ✅ **IP Asset Registration**: [`0x96f06d91...4e3315`](https://aeneid.storyscan.io/tx/0x96f06d916cdd14ab94e63442df662ae164f12fac1b7f226d0cef4800984e3315)
 
 ## 📦 Tech Stack
 
