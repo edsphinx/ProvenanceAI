@@ -31,6 +31,7 @@ mod ai_util;
 mod evm_util;
 mod story_util;
 mod nft_deployment;
+mod constellation_util;
 
 // ==============================================================================
 // Data Structures
@@ -111,7 +112,7 @@ fn init(config: CanisterConfig) {
         let mut state = state.borrow_mut();
         state.owner = ic_cdk::caller();
         // TODO: Query this from the RPC on init in production
-        state.evm_nonce = U256::from(7); // Set to current RPC nonce (updated 2025-10-22)
+        state.evm_nonce = U256::from(8); // Set to current RPC nonce (updated 2025-10-22 post-IP-registration)
     });
 
     ic_cdk::println!("✅ Brain Canister initialized successfully");
@@ -289,10 +290,35 @@ async fn generate_and_register_ip(input: GenerationInput) -> Result<GenerationOu
         }
     };
 
-    // STEP 5: Log on Constellation (Stubbed for now)
-    ic_cdk::println!("\n🌌 STEP 5: Logging proof on Constellation...");
-    ic_cdk::println!("   ⚠️  [STUB] - Will be implemented in Phase 3");
-    let constellation_tx_hash = "CONSTELLATION_TX_STUB_PHASE3".to_string();
+    // STEP 5: Log on Constellation DAG
+    ic_cdk::println!("\n🌌 STEP 5: Logging proof on Constellation DAG...");
+
+    let proof = constellation_util::ProofOfGeneration {
+        content_hash: content_hash.clone(),
+        model_name: "deepseek-chat".to_string(),
+        timestamp: ic_cdk::api::time(),
+        story_ip_id: story_ip_id.clone(),
+        nft_contract: nft_contract.clone(),
+        nft_token_id: token_id,
+        generator_address: "ICP-Canister".to_string(), // Placeholder for canister identity
+    };
+
+    let constellation_url = get_config().constellation_metagraph_url;
+
+    let constellation_tx_hash = match constellation_util::log_proof_on_constellation(
+        constellation_url,
+        proof,
+    ).await {
+        Ok(tx_hash) => {
+            ic_cdk::println!("   ✅ Logged on Constellation (simulated)");
+            ic_cdk::println!("   TX Hash: {}", tx_hash);
+            tx_hash
+        }
+        Err(e) => {
+            ic_cdk::println!("   ⚠️  Constellation logging failed (non-critical): {}", e);
+            format!("CONST-ERROR-{}", ic_cdk::api::time())
+        }
+    };
 
     ic_cdk::println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     ic_cdk::println!("✅ ORCHESTRATION COMPLETE");

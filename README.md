@@ -22,7 +22,7 @@ ProvenanceAI combines three powerful blockchain ecosystems:
 - 🔐 **Chain-Key ECDSA** - Threshold signatures for EVM transactions (no private keys!)
 - 📜 **NFT Minting** - ERC721 NFTs with content hash tracking
 - 🏛️ **IP Registration** - Automated Story Protocol registration
-- 🌌 **Proof Logging** - Constellation DAG immutable records (Phase 3)
+- 🌌 **Proof Logging** - Constellation DAG immutable records (simulated for MVP)
 
 ## 🏗️ Architecture
 
@@ -39,7 +39,7 @@ ProvenanceAI combines three powerful blockchain ecosystems:
     (Aeneid Testnet)    (Chain-Key)       (DAG Layer)
 ```
 
-## 🚀 Phase 2 Status - COMPLETE ✅
+## 🚀 Phase 2.2 Status - COMPLETE ✅
 
 ### Deployed Contracts
 
@@ -152,6 +152,7 @@ dfx canister call brain_canister generate_and_register_ip '(record {
 - **`src/brain_canister/src/lib.rs`** - Main orchestrator
 - **`src/brain_canister/src/nft_deployment.rs`** - NFT deployment & minting
 - **`src/brain_canister/src/story_util.rs`** - Story Protocol integration
+- **`src/brain_canister/src/constellation_util.rs`** - Constellation DAG logging
 - **`src/brain_canister/src/evm_util.rs`** - EVM transaction utilities
 - **`src/brain_canister/src/ai_util.rs`** - DeepSeek AI integration
 - **`src/SimpleNFT.sol`** - ERC721 NFT contract
@@ -180,15 +181,20 @@ generate_and_register_ip(input: GenerationInput) -> Result<GenerationOutput, Str
 - [x] Chain-Key ECDSA implementation
 - [x] Basic EVM transaction signing
 
-### Phase 2 ✅ COMPLETE
+### Phase 2.1 ✅ COMPLETE
 - [x] SimpleNFT contract development
 - [x] NFT deployment from canister
 - [x] NFT minting with content hash
 - [x] Story Protocol IP registration
 - [x] End-to-end orchestration
 
+### Phase 2.2 ✅ COMPLETE
+- [x] Constellation DAG integration (MVP - simulated logging)
+- [x] Proof of generation data structure
+- [x] End-to-end flow with all 3 layers
+
 ### Phase 3 🔜 UPCOMING
-- [ ] Constellation DAG integration
+- [ ] Constellation metagraph deployment (production)
 - [ ] IPFS metadata upload
 - [ ] SPG NFT with licensing
 - [ ] Royalty module integration
