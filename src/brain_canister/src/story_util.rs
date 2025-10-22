@@ -38,13 +38,10 @@ pub async fn register_ip_on_story(
     ic_cdk::println!("      Content Hash: {}", content_hash);
     ic_cdk::println!("      Metadata URI: {}", metadata_uri);
 
-    // Step 1: Get and atomically increment the nonce from canister STATE
-    // This ensures sequential nonce usage across all transactions
-    let nonce_u256 = crate::get_and_increment_nonce();
-
-    // Convert U256 nonce to u64 (safe for reasonable nonce values)
-    let nonce = nonce_u256.low_u64();
-    ic_cdk::println!("      Nonce (from STATE): {}", nonce);
+    // Step 1: Get fresh nonce from blockchain via RPC
+    // This ensures we always use the correct nonce even after canister reinstalls
+    let nonce = crate::get_nonce_from_blockchain().await?;
+    ic_cdk::println!("      Nonce (from blockchain): {}", nonce);
 
     // Step 2: Get the canister's EVM address
     let evm_address = crate::evm_util::get_canister_evm_address().await?;
@@ -478,10 +475,9 @@ pub async fn register_nft_as_ip(
     ic_cdk::println!("      NFT Contract: {}", nft_contract_address);
     ic_cdk::println!("      Token ID: {}", token_id);
 
-    // Get and atomically increment the nonce from canister STATE
-    let nonce_u256 = crate::get_and_increment_nonce();
-    let nonce = nonce_u256.low_u64();
-    ic_cdk::println!("      Nonce (from STATE): {}", nonce);
+    // Get fresh nonce from blockchain via RPC
+    let nonce = crate::get_nonce_from_blockchain().await?;
+    ic_cdk::println!("      Nonce (from blockchain): {}", nonce);
 
     // Get the canister's EVM address
     let evm_address = crate::evm_util::get_canister_evm_address().await?;

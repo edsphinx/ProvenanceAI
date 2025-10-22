@@ -204,8 +204,77 @@ pub fn get_config() -> CanisterConfig {
     })
 }
 
-/// Get and atomically increment the EVM nonce
-/// This ensures sequential nonce usage for all EVM transactions
+/// Query current nonce from blockchain via RPC
+///
+/// This queries eth_getTransactionCount from Alchemy to get the real nonce
+/// Eliminates "nonce too low" errors by always using blockchain truth
+///
+/// # Returns
+/// * `Result<u64, String>` - Current nonce from blockchain or error
+pub async fn get_nonce_from_blockchain() -> Result<u64, String> {
+    ic_cdk::println!("   📡 Querying nonce from blockchain via RPC...");
+
+    // Get our EVM address
+    let evm_address = evm_util::get_canister_evm_address().await?;
+
+    // Alchemy RPC URL for Story Protocol Aeneid
+    let rpc_url = "https://story-network.g.alchemy.com/public/aeneid";
+
+    // Build JSON-RPC request for eth_getTransactionCount
+    let payload = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "eth_getTransactionCount",
+        "params": [evm_address, "latest"]  // "latest" for most recent nonce
+    });
+
+    let payload_str = serde_json::to_string(&payload)
+        .map_err(|e| format!("Failed to serialize RPC request: {}", e))?;
+
+    ic_cdk::println!("   📡 RPC Request: {}", payload_str);
+
+    // Make HTTP POST to RPC
+    let response = http_util::http_post(rpc_url, &payload_str, 2_000_000_000_000).await?;
+
+    ic_cdk::println!("   📡 RPC Response status: {}", response.status);
+    ic_cdk::println!("   📡 RPC Response body: {}", response.body);
+
+    // Parse JSON response
+    let json: serde_json::Value = serde_json::from_str(&response.body)
+        .map_err(|e| format!("Failed to parse RPC response: {}", e))?;
+
+    // Extract nonce from result field
+    let nonce_hex = json["result"]
+        .as_str()
+        .ok_or_else(|| {
+            if let Some(error) = json.get("error") {
+                format!("RPC error: {}", error)
+            } else {
+                format!("No result in RPC response: {}", response.body)
+            }
+        })?;
+
+    // Convert hex string to u64
+    let nonce = u64::from_str_radix(nonce_hex.trim_start_matches("0x"), 16)
+        .map_err(|e| format!("Failed to parse nonce hex '{}': {}", nonce_hex, e))?;
+
+    ic_cdk::println!("   ✅ Blockchain nonce: {}", nonce);
+
+    // Update cached nonce in state for reference
+    STATE.with(|state| {
+        let mut state = state.borrow_mut();
+        state.evm_nonce = U256::from(nonce);
+    });
+
+    Ok(nonce)
+}
+
+/// Get and atomically increment the EVM nonce (DEPRECATED)
+///
+/// # Deprecated
+/// This function uses a cached nonce which can get out of sync.
+/// Use `get_nonce_from_blockchain()` instead for reliable nonce management.
+#[deprecated(note = "Use get_nonce_from_blockchain() instead")]
 pub fn get_and_increment_nonce() -> U256 {
     STATE.with(|state| {
         let mut state = state.borrow_mut();

@@ -69,10 +69,9 @@ pub async fn deploy_simple_nft(
 
     ic_cdk::println!("   Total deployment size: {} bytes", deployment_data.len());
 
-    // Get and atomically increment the nonce from canister STATE
-    let nonce_u256 = crate::get_and_increment_nonce();
-    let nonce = nonce_u256.low_u64();
-    ic_cdk::println!("   Nonce (from STATE): {}", nonce);
+    // Get fresh nonce from blockchain via RPC
+    let nonce = crate::get_nonce_from_blockchain().await?;
+    ic_cdk::println!("   Nonce (from blockchain): {}", nonce);
 
     // Get the canister's EVM address
     let evm_address = crate::evm_util::get_canister_evm_address().await?;
@@ -210,10 +209,9 @@ pub async fn mint_nft(
     let call_data = build_mint_calldata(&recipient, content_hash, metadata_uri)?;
     ic_cdk::println!("   Call Data: {} bytes", call_data.len());
 
-    // Get and atomically increment the nonce from canister STATE
-    let nonce_u256 = crate::get_and_increment_nonce();
-    let nonce = nonce_u256.low_u64();
-    ic_cdk::println!("   Nonce (from STATE): {}", nonce);
+    // Get fresh nonce from blockchain via RPC
+    let nonce = crate::get_nonce_from_blockchain().await?;
+    ic_cdk::println!("   Nonce (from blockchain): {}", nonce);
 
     // Build unsigned transaction (EIP-155 format)
     let to_bytes: [u8; 20] = contract_address.to_fixed_bytes();
