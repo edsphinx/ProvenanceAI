@@ -1,159 +1,235 @@
-# Provenance AI
+# ProvenanceAI 🤖⚡
 
-A full-stack decentralized service for the generation, registration, and auditing of AI-generated Intellectual Property (IP), built 100% on-chain.
+**Cross-Chain AI-Generated Content Registration System**
 
-**Project for LegalHack 2025**
-*Sponsor Tracks Addressed: Internet Computer (ICP), Story Protocol, Constellation Network.*
+[![ICP](https://img.shields.io/badge/ICP-Internet_Computer-blue)](https://internetcomputer.org/)
+[![Story Protocol](https://img.shields.io/badge/Story-Protocol-purple)](https://story.foundation/)
+[![Constellation](https://img.shields.io/badge/Constellation-Network-orange)](https://constellationnetwork.io/)
 
----
+ProvenanceAI is a decentralized system for generating, minting, and registering AI-generated content as Intellectual Property (IP) assets across multiple blockchain networks.
 
-## The Problem
+## 🎯 Overview
 
-The proliferation of generative AI has created an intellectual property "black hole." Critical questions remain unanswered: Who owns an AI-generated asset? How can a creator prove its origin? How can licenses be programmatically enforced? How can we audit the provenance of a model or its output?
+ProvenanceAI combines three powerful blockchain ecosystems:
 
-This lack of auditable provenance and clear title of ownership breaks existing legal frameworks and stifles the creator economy.
+1. **Internet Computer (ICP)** - AI generation & orchestration
+2. **Story Protocol** - IP asset registration & licensing
+3. **Constellation Network** - DAG-based proof logging
 
-## The Solution
+## ✨ Features
 
-**Provenance AI** provides a 100% on-chain, trustless solution to this problem.
+- 🎨 **AI Content Generation** - DeepSeek-powered image generation
+- 🔐 **Chain-Key ECDSA** - Threshold signatures for EVM transactions (no private keys!)
+- 📜 **NFT Minting** - ERC721 NFTs with content hash tracking
+- 🏛️ **IP Registration** - Automated Story Protocol registration
+- 🌌 **Proof Logging** - Constellation DAG immutable records (Phase 3)
 
-It is a "provably honest" AI generation tool that, at the moment of creation, executes an atomic workflow to establish an immutable IP lineage.
+## 🏗️ Architecture
 
-When a user generates a new asset (e.g., an image, text, or code), Provenance AI performs three simultaneous actions:
+```
+┌─────────────────────────────────────────────────────┐
+│  ProvenanceAI Canister (ICP)                        │
+│  ├─ DeepSeek AI Integration                         │
+│  ├─ SimpleNFT Deployment & Minting                  │
+│  ├─ Story Protocol IP Registration                  │
+│  └─ Constellation DAG Logging (Phase 3)             │
+└─────────────────────────────────────────────────────┘
+           ↓                    ↓                 ↓
+    Story Protocol      ICP Canister      Constellation
+    (Aeneid Testnet)    (Chain-Key)       (DAG Layer)
+```
 
-1.  **Registers (Minting):** The output is registered as a new immutable `IP Asset` on **Story Protocol**, programmatically attaching licensing terms.
-2.  **Audits (Logging):** An immutable "Proof of Generation" is logged on the **Constellation Hypergraph**, creating a verifiable audit trail (model used, content hash, timestamp).
-3.  **Orchestrates (Executing):** The entire workflow is managed by a tamper-proof backend canister running entirely on the **Internet Computer (ICP)**, which also hosts the web frontend.
+## 🚀 Phase 2 Status - COMPLETE ✅
 
-The result is a new class of digital asset: an AI-generated IP with an unquestionable on-chain title of ownership and a verifiable creation history.
+### Deployed Contracts
 
-## Architecture Diagram
+**Story Protocol Aeneid Testnet (Chain ID: 1315)**
 
-The project's core is the orchestration of three distinct blockchains from a single ICP backend.
+- **SimpleNFT Contract**: [`0x6853943248910243cDCE66C21C12398ebbC1642D`](https://aeneid.storyscan.io/address/0x6853943248910243cDCE66C21C12398ebbC1642D)
+- **IPAssetRegistry**: `0x77319B4031e6eF1250907aa00018B8B1c67a244b`
+- **First NFT Minted**: [Token ID #1](https://aeneid.storyscan.io/tx/0xa1b0eea1bedf69c9c2725daae560ae2b5df1cc26e30b3e131bbb58db4196ac03)
 
-+--------------------------+
-|     User on the          |
-| [Frontend Canister (ICP)]|
-+--------------------------+
-             |
-             v
-+--------------------------+
-|  [Brain Canister (ICP)]  |  <-- (Backend Logic in Rust)
-|                          |
-|  1. Pay/Verify ckBTC     |
-|  2. Generate AI content  |
-+--------------------------+
-             |
- +-----------+-----------+
- |                       |
- v                       v
-+-------------------+   +--------------------+
-| (EVM Call via     |   | (HTTP Call via     |
-| Chain-Key ECDSA)  |   | ICP Outcall)       |
-+-------------------+   +--------------------+
- |                       |
- v                       v
-+-------------------+   +--------------------+
-|  Story Protocol   |   | Constellation      |
-| (IP Registration, |   | (Audit Log)        |
-|  Royalty Payment) |   |                    |
-+-------------------+   +--------------------+
+**ICP Canister**
 
-### Architecture Components
+- **Canister ID**: `uxrrr-q7777-77774-qaaaq-cai` (local)
+- **EVM Address**: `0xDa824f554C42ecd28a74A037c70FA0b5bf447bB0`
 
-* **Internet Computer (ICP):** Serves as the computation, logic, and orchestration layer.
-    * **Frontend Canister:** Hosts the React dApp, serving the web directly to the user.
-    * **Brain Canister (Backend):** A Rust canister that manages business logic. It uses **Chain-Key ECDSA** to generate a canister-owned EVM address and sign transactions for Story Protocol. It uses **HTTP Outcalls** to send audit data to the Constellation Metagraph. It manages incoming **ckBTC** payments.
-* **Story Protocol (IP Layer):** Serves as the legal ownership layer.
-    * **`IPAssetRegistry`:** Used to register the AI output as a `Root IP Asset` (IPA).
-    * **`Licensing Module`:** Used to attach a programmatic license template to the new IPA.
-    * **`Royalty Module`:** Used to receive royalty payments (sent from the ICP canister) and distribute them to the parent "AI Model" IP.
-* **Constellation Network (Audit Layer):** Serves as the data validation and audit layer.
-    * **Metagraph (L0):** A custom-deployed Metagraph exposing an HTTP endpoint. It accepts "Proof of Generation" data (hash, `ipId`, timestamp) and immutably validates and logs it onto the DAG.
+### Verified Transactions
 
-## Key Features
+1. ✅ **SimpleNFT Deployment**: [`0x5b2b1b0c...762209`](https://aeneid.storyscan.io/tx/0x5b2b1b0cffbbc297ccd4d4ef74d81285ce59291a657c92eb8990c6a8e5762209)
+2. ✅ **NFT Mint #1**: [`0xa1b0eea1...96ac03`](https://aeneid.storyscan.io/tx/0xa1b0eea1bedf69c9c2725daae560ae2b5df1cc26e30b3e131bbb58db4196ac03)
 
-* **Decentralized IP Generation:** 100% on-chain frontend and backend on ICP.
-* **Atomic IP Registration:** Generated assets are instantly registered on Story Protocol at the moment of creation.
-* **Programmatic Licensing:** Each new IP is created with a Story Protocol License (PIL) attached.
-* **Immutable Audit Log:** Every asset is linked to an audit record on the Constellation Hypergraph.
-* **Native Bitcoin Payments:** The service utilizes `ckBTC` for payments, demonstrating ICP's Bitcoin integration.
-* **Automated AI Royalties:** A percentage of the `ckBTC` fee is automatically paid to the parent "AI Model" IP using Story's Royalty Module.
-* **Dispute Resolution:** The UI allows users to flag infringing IP, invoking Story's Dispute Module.
+## 📦 Tech Stack
 
-## Technology Used
+### Blockchain Platforms
 
-* **Blockchain & Infrastructure:** Internet Computer (ICP), Story Protocol, Constellation Network (Hypergraph)
-* **Backend:** Rust, ICP Canisters, Chain-Key ECDSA, HTTP Outcalls
-* **Frontend:** React, TypeScript, DFX
-* **Tokens & Contracts:** ckBTC, Story Protocol Contract Standards
+- **Internet Computer (ICP)** - Decentralized compute & AI orchestration
+- **Story Protocol** - IP asset management
+- **Constellation Network** - DAG-based data integrity
 
-## Live Demo & Links
+### Smart Contracts
 
-* **Deployed dApp (ICP Mainnet):** `https://<FRONTEND_CANISTER_ID>.icp0.io`
-* **Backend Brain Canister ID:** `<BRAIN_CANISTER_ID>`
-* **GitHub Repository:** `[LINK TO YOUR GITHUB REPO]`
-* **Demo Video (Pitch):** `[LINK TO YOUR 2-MINUTE VIDEO]`
-* **Code Walkthrough Video (ICP):** `[LINK TO YOUR CODE WALKTHROUGH]`
+- **Solidity 0.8.26** - SimpleNFT (ERC721)
+- **Foundry** - Solidity development framework
+- **OpenZeppelin** - Secure contract libraries
 
----
+### Backend
 
-## Local Development
+- **Rust** - ICP canister implementation
+- **ic-cdk** - ICP Canister Development Kit
+- **Chain-Key ECDSA** - Threshold signature scheme
+
+### AI Integration
+
+- **DeepSeek AI** - Content generation
+- **MD5 Hashing** - Content fingerprinting
+
+## 🛠️ Development
 
 ### Prerequisites
 
-* Node.js (v16+)
-* Rust and Cargo
-* `dfx` (The ICP SDK)
+```bash
+# ICP Development
+dfx --version  # 0.17.0 or higher
 
-Follow the instructions at [sdk.dfinity.org](https://sdk.dfinity.org/docs/index.html) to install `dfx`.
+# Rust
+cargo --version  # 1.75.0 or higher
 
-### Setup
+# Solidity
+forge --version  # Foundry
+```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [LINK TO YOUR GITHUB REPO]
-    cd provenance-ai
-    ```
+### Installation
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
+```bash
+# Clone repository
+git clone <repository-url>
+cd ProvenanceAI
 
-3.  **Configure environment variables:**
-    Create a `.env` file in the project root.
-    ```properties
-    # Story Protocol Testnet RPC URL
-    STORY_RPC_URL=https://...
-    # Your deployed Constellation Metagraph Endpoint
-    CONSTELLATION_METAGRAPH_URL=https://...
-    # ckBTC Ledger Canister ID (Testnet)
-    CKBTC_LEDGER_ID=...
-    ```
+# Install dependencies
+cargo build --target wasm32-unknown-unknown --release --package brain_canister
 
-### Running Locally
+# Compile Solidity contracts
+forge build
+```
 
-1.  **Start the local ICP replica:**
-    ```bash
-    dfx start --background --clean
-    ```
+### Local Deployment
 
-2.  **Deploy the canisters locally:**
-    ```bash
-    dfx deploy
-    ```
+```bash
+# Start dfx
+dfx start --clean --background
 
-3.  **Get the frontend URL:**
-    ```bash
-    echo "Frontend canister running at: [http://127.0.0.1:4943?canisterId=$(dfx](http://127.0.0.1:4943?canisterId=$(dfx) canister id frontend_canister)"
-    ```
+# Deploy canister
+dfx deploy brain_canister --argument '(record {
+  deepseek_api_key = "your-api-key";
+  constellation_metagraph_url = "https://l0-lb-testnet.constellationnetwork.io";
+  replicate_api_key = opt "";
+})'
 
-4.  **Start the frontend dev server (optional, for hot-reloading):**
-    ```bash
-    npm start
-    ```
+# Deploy SimpleNFT (one-time setup)
+dfx canister call brain_canister deploy_nft_contract '("ProvenanceAI NFT", "PROV")'
+```
 
-## License
+### Testing
 
-This project is open source and licensed under the **MIT License**.
+```bash
+# Generate and register AI content
+dfx canister call brain_canister generate_and_register_ip '(record {
+  prompt = "A futuristic cityscape";
+  metadata = record {
+    title = "Futuristic City";
+    description = "AI-generated artwork";
+    tags = vec { "ai"; "city"; "futuristic" }
+  }
+})'
+```
+
+## 📚 Documentation
+
+### Core Modules
+
+- **`src/brain_canister/src/lib.rs`** - Main orchestrator
+- **`src/brain_canister/src/nft_deployment.rs`** - NFT deployment & minting
+- **`src/brain_canister/src/story_util.rs`** - Story Protocol integration
+- **`src/brain_canister/src/evm_util.rs`** - EVM transaction utilities
+- **`src/brain_canister/src/ai_util.rs`** - DeepSeek AI integration
+- **`src/SimpleNFT.sol`** - ERC721 NFT contract
+
+### Key Functions
+
+```rust
+// Deploy SimpleNFT contract
+deploy_nft_contract(name: String, symbol: String) -> Result<String, String>
+
+// Mint NFT with content hash
+mint_nft(contract: String, hash: String, uri: String) -> Result<u64, String>
+
+// Register NFT as IP Asset
+register_nft_as_ip(contract: String, token_id: u64) -> Result<String, String>
+
+// Complete end-to-end flow
+generate_and_register_ip(input: GenerationInput) -> Result<GenerationOutput, String>
+```
+
+## 🗺️ Roadmap
+
+### Phase 1 ✅ COMPLETE
+- [x] ICP canister setup
+- [x] DeepSeek AI integration
+- [x] Chain-Key ECDSA implementation
+- [x] Basic EVM transaction signing
+
+### Phase 2 ✅ COMPLETE
+- [x] SimpleNFT contract development
+- [x] NFT deployment from canister
+- [x] NFT minting with content hash
+- [x] Story Protocol IP registration
+- [x] End-to-end orchestration
+
+### Phase 3 🔜 UPCOMING
+- [ ] Constellation DAG integration
+- [ ] IPFS metadata upload
+- [ ] SPG NFT with licensing
+- [ ] Royalty module integration
+- [ ] Advanced IP features
+
+### Phase 4 📅 PLANNED
+- [ ] ckBTC payment integration
+- [ ] Web frontend (Next.js)
+- [ ] Wallet connection
+- [ ] User dashboard
+
+### Phase 5 🔮 FUTURE
+- [ ] Dispute resolution module
+- [ ] Multi-chain deployment
+- [ ] Advanced AI models
+- [ ] Community governance
+
+## 🔐 Security
+
+- **No Private Keys** - Chain-Key ECDSA threshold signatures
+- **Nonce Management** - Atomic increment for transaction ordering
+- **Access Control** - Owner-based permissions
+- **EIP-155** - Replay attack protection
+
+## 📄 License
+
+MIT License
+
+## 🙏 Acknowledgments
+
+- **Internet Computer** - Decentralized compute platform
+- **Story Protocol** - IP asset infrastructure
+- **Constellation Network** - DAG technology
+- **DeepSeek** - AI content generation
+- **OpenZeppelin** - Secure smart contract libraries
+
+## 📞 Contact
+
+For questions and support, please open an issue in this repository.
+
+---
+
+**Built with ❤️ for the future of AI-generated IP** 🚀
+
+*ProvenanceAI - Where AI meets Blockchain meets IP Protection*

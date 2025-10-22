@@ -53,5 +53,15 @@ npm-debug.log*
 # Cache
 .cache/
 
-#AI
+# AI
 .claude
+
+# Private documentation and internal notes
+# All planning, architecture, and implementation docs go in .private/
+.private/
+
+# Generated documentation (auto-generated from code)
+docs/
+
+.gitignore
+TODO.md
