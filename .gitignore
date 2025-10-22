@@ -69,3 +69,5 @@ TODO.md
 cache/
 out/
 lib/forge-std/
+
+.env.dfx
