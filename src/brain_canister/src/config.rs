@@ -33,16 +33,28 @@ pub const GAS_PRICE: u64 = 20_000_000_000; // 20 Gwei
 // https://github.com/storyprotocol/protocol-periphery-v1/blob/main/deploy-out/deployment-1315.json
 // Documentation: https://docs.story.foundation/network/connect/aeneid
 
-/// IPAssetRegistry contract address
+/// IPAssetRegistry contract address (DEPRECATED - Use RegistrationWorkflows instead)
 pub fn ip_asset_registry_address() -> H160 {
-    // Placeholder - replace with actual address from Story Protocol docs
     H160::from_str("0x77319B4031e6eF1250907aa00018B8B1c67a244b")
         .expect("Invalid IPAssetRegistry address")
 }
 
+/// RegistrationWorkflows contract address (SPG - Story Protocol Gateway)
+/// This is the correct contract for registering IP via mintAndRegisterIp
+pub fn registration_workflows_address() -> H160 {
+    H160::from_str("0xbe39E1C756e921BD25DF86e7AAa31106d1eb0424")
+        .expect("Invalid RegistrationWorkflows address")
+}
+
+/// Public SPG NFT Contract (Aeneid testnet)
+/// This is a public collection provided by Story Protocol for testing
+pub fn spg_nft_contract_address() -> H160 {
+    H160::from_str("0xc32A8a0FF3beDDDa58393d022aF433e78739FAbc")
+        .expect("Invalid SPG NFT Contract address")
+}
+
 /// LicensingModule contract address
 pub fn licensing_module_address() -> H160 {
-    // Placeholder - replace with actual address
     H160::from_str("0x04fbd8a2e56dd85CFD5500A4A4DfA955B9f1dE6f")
         .expect("Invalid LicensingModule address")
 }
