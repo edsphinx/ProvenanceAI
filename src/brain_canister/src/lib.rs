@@ -30,9 +30,7 @@ mod http_util;
 mod ai_util;
 mod evm_util;
 mod story_util;
-
-// Re-export for convenience
-use config::*;
+mod nft_deployment;
 
 // ==============================================================================
 // Data Structures
@@ -74,6 +72,7 @@ pub struct GenerationOutput {
 pub struct State {
     pub owner: Principal,
     pub evm_nonce: U256,
+    pub nft_contract_address: Option<String>,
 }
 
 impl Default for State {
@@ -81,6 +80,7 @@ impl Default for State {
         Self {
             owner: Principal::anonymous(),
             evm_nonce: U256::zero(),
+            nft_contract_address: None,
         }
     }
 }
@@ -105,10 +105,13 @@ fn init(config: CanisterConfig) {
     });
 
     // Initialize state
+    // NOTE: If redeploying to an address that already has transactions,
+    // you need to set the correct nonce here
     STATE.with(|state| {
         let mut state = state.borrow_mut();
         state.owner = ic_cdk::caller();
-        state.evm_nonce = U256::zero();
+        // TODO: Query this from the RPC on init in production
+        state.evm_nonce = U256::from(6); // Set to current RPC nonce (updated after SimpleNFT deployment)
     });
 
     ic_cdk::println!("✅ Brain Canister initialized successfully");
@@ -119,6 +122,29 @@ fn init(config: CanisterConfig) {
 // ==============================================================================
 // Configuration Management
 // ==============================================================================
+
+#[ic_cdk::update]
+fn set_owner(new_owner: Principal) {
+    let caller = ic_cdk::caller();
+
+    STATE.with(|state| {
+        let current_owner = state.borrow().owner;
+
+        // Only current owner can change owner
+        if current_owner != caller {
+            ic_cdk::trap("Unauthorized: Only current owner can change owner");
+        }
+
+        state.borrow_mut().owner = new_owner;
+    });
+
+    ic_cdk::println!("Owner updated to: {}", new_owner);
+}
+
+#[ic_cdk::query]
+fn get_owner() -> Principal {
+    STATE.with(|state| state.borrow().owner)
+}
 
 #[ic_cdk::query]
 fn is_configured() -> bool {
@@ -177,6 +203,17 @@ pub fn get_config() -> CanisterConfig {
     })
 }
 
+/// Get and atomically increment the EVM nonce
+/// This ensures sequential nonce usage for all EVM transactions
+pub fn get_and_increment_nonce() -> U256 {
+    STATE.with(|state| {
+        let mut state = state.borrow_mut();
+        let current_nonce = state.evm_nonce;
+        state.evm_nonce += U256::one();
+        current_nonce
+    })
+}
+
 // ==============================================================================
 // Main Orchestration Function (Stubbed for Day 1-3)
 // ==============================================================================
@@ -195,13 +232,65 @@ async fn generate_and_register_ip(input: GenerationInput) -> Result<GenerationOu
     ic_cdk::println!("   ✅ Image URL: {}", image_url);
     ic_cdk::println!("   ✅ Content Hash: {}", content_hash);
 
-    // STEP 2: Register on Story Protocol (Stubbed for now)
-    ic_cdk::println!("\n📜 STEP 2: Registering IP on Story Protocol...");
-    ic_cdk::println!("   ⚠️  [STUB] - Will be implemented in Phase 2");
-    let story_ip_id = "STORY_IP_ID_STUB_PHASE2".to_string();
+    // STEP 2: Get NFT contract address (must be deployed first)
+    ic_cdk::println!("\n🎨 STEP 2: Checking NFT contract...");
+    let nft_contract_address = STATE.with(|state| {
+        state.borrow().nft_contract_address.clone()
+    });
 
-    // STEP 3: Log on Constellation (Stubbed for now)
-    ic_cdk::println!("\n🌌 STEP 3: Logging proof on Constellation...");
+    let nft_contract = match nft_contract_address {
+        Some(addr) => {
+            ic_cdk::println!("   ✅ NFT Contract: {}", addr);
+            addr
+        }
+        None => {
+            return Err("NFT contract not deployed yet. Please call deploy_nft_contract() first.".to_string());
+        }
+    };
+
+    // STEP 3: Mint NFT
+    ic_cdk::println!("\n🎨 STEP 3: Minting NFT...");
+
+    // Create metadata URI (for now, use placeholder - in production, upload to IPFS)
+    let metadata_uri = format!(
+        "ipfs://placeholder/{}/metadata.json",
+        content_hash
+    );
+
+    let token_id = match nft_deployment::mint_nft(
+        nft_contract.clone(),
+        content_hash.clone(),
+        metadata_uri,
+    ).await {
+        Ok(token_id) => {
+            ic_cdk::println!("   ✅ NFT minted! Token ID: {}", token_id);
+            token_id
+        }
+        Err(e) => {
+            ic_cdk::println!("   ❌ NFT minting failed: {}", e);
+            return Err(format!("Failed to mint NFT: {}", e));
+        }
+    };
+
+    // STEP 4: Register NFT as IP Asset on Story Protocol
+    ic_cdk::println!("\n📜 STEP 4: Registering NFT as IP Asset on Story Protocol...");
+
+    let story_ip_id = match story_util::register_nft_as_ip(
+        nft_contract.clone(),
+        token_id,
+    ).await {
+        Ok(tx_hash) => {
+            ic_cdk::println!("   ✅ Transaction Hash: {}", tx_hash);
+            tx_hash
+        }
+        Err(e) => {
+            ic_cdk::println!("   ❌ Story Protocol registration failed: {}", e);
+            return Err(format!("Failed to register IP on Story Protocol: {}", e));
+        }
+    };
+
+    // STEP 5: Log on Constellation (Stubbed for now)
+    ic_cdk::println!("\n🌌 STEP 5: Logging proof on Constellation...");
     ic_cdk::println!("   ⚠️  [STUB] - Will be implemented in Phase 3");
     let constellation_tx_hash = "CONSTELLATION_TX_STUB_PHASE3".to_string();
 
@@ -245,6 +334,66 @@ async fn get_canister_evm_address() -> String {
             "Error: EVM address derivation failed".to_string()
         }
     }
+}
+
+// ==============================================================================
+// SimpleNFT Contract Deployment
+// ==============================================================================
+
+/// Deploy the SimpleNFT contract to Story Protocol
+///
+/// This should be called once during setup to deploy the NFT contract
+/// that will be used for minting IP assets.
+///
+/// # Arguments
+/// * `name` - The name of the NFT collection
+/// * `symbol` - The symbol of the NFT collection
+///
+/// # Returns
+/// * `Result<String, String>` - Deployed contract address or error
+#[ic_cdk::update]
+async fn deploy_nft_contract(name: String, symbol: String) -> Result<String, String> {
+    // Check if already deployed
+    let already_deployed = STATE.with(|state| {
+        state.borrow().nft_contract_address.is_some()
+    });
+
+    if already_deployed {
+        return Err("NFT contract already deployed. Use get_nft_contract_address() to retrieve it.".to_string());
+    }
+
+    ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    ic_cdk::println!("📦 DEPLOYING SIMPLENFT CONTRACT");
+    ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    let contract_address = nft_deployment::deploy_simple_nft(name, symbol).await?;
+
+    // Store the contract address in state
+    STATE.with(|state| {
+        state.borrow_mut().nft_contract_address = Some(contract_address.clone());
+    });
+
+    ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    ic_cdk::println!("✅ NFT CONTRACT DEPLOYED");
+    ic_cdk::println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    Ok(contract_address)
+}
+
+/// Get the deployed NFT contract address
+#[ic_cdk::query]
+fn get_nft_contract_address() -> Option<String> {
+    STATE.with(|state| state.borrow().nft_contract_address.clone())
+}
+
+/// Manually set NFT contract address (for recovery if deployment succeeded but state wasn't updated)
+#[ic_cdk::update]
+fn set_nft_contract_address(address: String) {
+    STATE.with(|state| {
+        state.borrow_mut().nft_contract_address = Some(address.clone());
+    });
+
+    ic_cdk::println!("NFT contract address set to: {}", address);
 }
 
 // ==============================================================================

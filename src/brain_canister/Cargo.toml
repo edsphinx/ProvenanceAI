@@ -26,3 +26,7 @@ rlp = "0.5"
 sha3 = "0.10"
 hex = "0.4"
 primitive-types = { version = "0.12", features = ["serde"] }
+k256 = { version = "0.13", features = ["ecdsa", "sha256"] }
+
+# ic-alloy for EVM contract deployment
+alloy = { git = "https://github.com/ic-alloy/ic-alloy.git", tag = "v0.3.5-icp.1", default-features = false, features = ["icp", "sol-types", "contract"] }
