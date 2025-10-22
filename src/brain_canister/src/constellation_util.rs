@@ -27,15 +27,15 @@ pub struct ProofOfGeneration {
 /// Log a proof of generation on Constellation DAG
 ///
 /// # Arguments
-/// * `metagraph_url` - The Constellation metagraph L1 endpoint URL
+/// * `metagraph_url` - The Constellation metagraph L1 endpoint URL (e.g., "http://198.144.183.32:9400")
 /// * `proof` - The proof data to log
 ///
 /// # Returns
-/// * `Result<String, String>` - Transaction hash or error message
+/// * `Result<String, String>` - Transaction hash from Constellation or error message
 ///
-/// # Note
-/// For MVP, this is a stub that simulates logging to Constellation.
-/// In production, this would submit to a deployed Data L1 endpoint.
+/// # Phase 3 Implementation
+/// This now performs real HTTP POST to the Constellation metagraph Data L1 endpoint.
+/// Falls back to simulated hash if HTTP request fails (for development/testing).
 pub async fn log_proof_on_constellation(
     metagraph_url: String,
     proof: ProofOfGeneration,
@@ -45,45 +45,54 @@ pub async fn log_proof_on_constellation(
     ic_cdk::println!("   [Constellation] Content Hash: {}", proof.content_hash);
     ic_cdk::println!("   [Constellation] Story IP ID: {}", proof.story_ip_id);
 
-    // For MVP Phase 2.2, we'll create a stub that simulates the Constellation logging
-    // In Phase 3+, this will be replaced with actual HTTP POST to Data L1 endpoint
+    // Build JSON payload for Constellation Data L1
+    let payload = build_constellation_data_payload(&proof);
+    let payload_str = serde_json::to_string(&payload)
+        .map_err(|e| format!("Failed to serialize payload: {}", e))?;
 
-    // TODO Phase 3: Implement actual Constellation Data L1 submission
-    // The actual implementation would look like:
-    //
-    // 1. Serialize the proof data to JSON
-    // 2. Create signed data structure (requires DAG wallet/keypair)
-    // 3. POST to metagraph_url/data endpoint
-    // 4. Parse response for transaction hash
-    //
-    // Example endpoint structure:
-    // POST {metagraph_url}/data
-    // Body: {
-    //   "value": {
-    //     "contentHash": "...",
-    //     "modelName": "...",
-    //     "timestamp": ...,
-    //     "storyIpId": "...",
-    //     "nftContract": "...",
-    //     "nftTokenId": ...,
-    //     "generatorAddress": "..."
-    //   },
-    //   "proofs": [
-    //     {
-    //       "id": "generator_address",
-    //       "signature": "signature_hex"
-    //     }
-    //   ]
-    // }
+    ic_cdk::println!("   [Constellation] Payload: {}", payload_str);
 
-    // For now, create a deterministic "transaction hash" based on content
-    let simulated_tx_hash = generate_simulated_tx_hash(&proof);
+    // Construct the /data endpoint URL
+    let url = if metagraph_url.ends_with('/') {
+        format!("{}data", metagraph_url)
+    } else {
+        format!("{}/data", metagraph_url)
+    };
 
-    ic_cdk::println!("   [Constellation] ⚠️  STUB: Simulated logging (Phase 2.2 MVP)");
-    ic_cdk::println!("   [Constellation] ✅ Simulated TX Hash: {}", simulated_tx_hash);
-    ic_cdk::println!("   [Constellation] 📝 Proof data prepared for future DAG submission");
+    ic_cdk::println!("   [Constellation] POST {}", url);
 
-    Ok(simulated_tx_hash)
+    // Attempt real HTTP POST to Constellation metagraph
+    match http_util::http_post(&url, &payload_str, 2_000_000_000_000).await {
+        Ok(response) => {
+            ic_cdk::println!("   [Constellation] ✅ Response received from metagraph");
+            ic_cdk::println!("   [Constellation] Status: {}", response.status);
+            ic_cdk::println!("   [Constellation] Body: {}", response.body);
+
+            // Try to extract transaction hash from response
+            match extract_tx_hash_from_response(&response.body) {
+                Ok(tx_hash) => {
+                    ic_cdk::println!("   [Constellation] ✅ TX Hash: {}", tx_hash);
+                    Ok(tx_hash)
+                }
+                Err(e) => {
+                    ic_cdk::println!("   [Constellation] ⚠️  Could not extract hash: {}", e);
+                    ic_cdk::println!("   [Constellation] 📝 Using deterministic hash as fallback");
+                    // Fallback to simulated hash
+                    let fallback_hash = generate_simulated_tx_hash(&proof);
+                    Ok(format!("FALLBACK-{}", fallback_hash))
+                }
+            }
+        }
+        Err(e) => {
+            ic_cdk::println!("   [Constellation] ❌ HTTP POST failed: {}", e);
+            ic_cdk::println!("   [Constellation] 📝 Using simulated hash for development");
+
+            // For development: return simulated hash if HTTP fails
+            // This allows testing without deployed metagraph
+            let simulated_hash = generate_simulated_tx_hash(&proof);
+            Ok(format!("SIMULATED-{}", simulated_hash))
+        }
+    }
 }
 
 /// Generate a simulated transaction hash for MVP
@@ -109,26 +118,58 @@ fn generate_simulated_tx_hash(proof: &ProofOfGeneration) -> String {
 }
 
 /// Build the JSON payload for Constellation Data L1 submission
-/// This will be used in Phase 3+ when we have actual metagraph deployment
-#[allow(dead_code)]
+/// Constructs the exact format expected by the ProofOfGeneration metagraph
 fn build_constellation_data_payload(proof: &ProofOfGeneration) -> serde_json::Value {
     json!({
         "value": {
-            "contentHash": proof.content_hash,
-            "modelName": proof.model_name,
-            "timestamp": proof.timestamp,
-            "storyIpId": proof.story_ip_id,
-            "nftContract": proof.nft_contract,
-            "nftTokenId": proof.nft_token_id,
-            "generatorAddress": proof.generator_address,
-            "metadata": {
-                "source": "ProvenanceAI",
-                "version": "1.0.0"
+            "ProofOfGeneration": {
+                "contentHash": proof.content_hash,
+                "modelName": proof.model_name,
+                "timestamp": proof.timestamp,
+                "storyIpId": proof.story_ip_id,
+                "nftContract": proof.nft_contract,
+                "nftTokenId": proof.nft_token_id,
+                "generatorAddress": proof.generator_address
             }
         },
-        // In production, this would include actual cryptographic signatures
+        // For MVP, empty proofs array (no signature validation)
+        // Phase 4: Implement proper DAG wallet signing
         "proofs": []
     })
+}
+
+/// Extract transaction hash from Constellation response
+/// Tries multiple possible response formats
+fn extract_tx_hash_from_response(response_body: &str) -> Result<String, String> {
+    // Try to parse as JSON
+    match serde_json::from_str::<serde_json::Value>(response_body) {
+        Ok(json) => {
+            // Try common hash field names
+            if let Some(hash) = json.get("hash").and_then(|h| h.as_str()) {
+                return Ok(format!("CONST-{}", hash));
+            }
+            if let Some(hash) = json.get("transactionHash").and_then(|h| h.as_str()) {
+                return Ok(format!("CONST-{}", hash));
+            }
+            if let Some(hash) = json.get("tx_hash").and_then(|h| h.as_str()) {
+                return Ok(format!("CONST-{}", hash));
+            }
+            if let Some(hash) = json.get("txHash").and_then(|h| h.as_str()) {
+                return Ok(format!("CONST-{}", hash));
+            }
+
+            // If no hash found, return the whole response for debugging
+            Err(format!("No hash field found in response: {}", response_body))
+        }
+        Err(_) => {
+            // If not JSON, return the body as-is (might be plain text hash)
+            if !response_body.is_empty() && response_body.len() < 100 {
+                Ok(format!("CONST-{}", response_body.trim()))
+            } else {
+                Err(format!("Could not parse response as JSON: {}", response_body))
+            }
+        }
+    }
 }
 
 /// Query Constellation for proof verification (Phase 3+)

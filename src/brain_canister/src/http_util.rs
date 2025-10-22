@@ -140,3 +140,74 @@ pub fn auth_header(token: &str) -> HttpHeader {
         value: format!("Bearer {}", token),
     }
 }
+
+// ==============================================================================
+// Convenience Functions
+// ==============================================================================
+
+/// Response structure for HTTP requests
+#[derive(Debug, Clone)]
+pub struct HttpOutcallResponse {
+    pub status: u32,
+    pub body: String,
+}
+
+/// Make an HTTP POST request with JSON payload
+///
+/// # Arguments
+/// * `url` - The URL to POST to
+/// * `json_body` - JSON string to send as body
+/// * `cycles` - Cycles to allocate for the request
+///
+/// # Returns
+/// * `Result<HttpOutcallResponse, String>` - Response or error
+pub async fn http_post(
+    url: &str,
+    json_body: &str,
+    cycles: u128,
+) -> Result<HttpOutcallResponse, String> {
+    ic_cdk::println!("📡 HTTP POST: {}", url);
+    ic_cdk::println!("   Body length: {} bytes", json_body.len());
+
+    // Create transform context
+    let transform_context = TransformContext {
+        function: TransformFunc(candid::Func {
+            principal: ic_cdk::api::id(),
+            method: "http_transform".to_string(),
+        }),
+        context: vec![],
+    };
+
+    // Build request
+    let request = CanisterHttpRequestArgument {
+        url: url.to_string(),
+        method: HttpMethod::POST,
+        body: Some(json_body.as_bytes().to_vec()),
+        max_response_bytes: Some(10_000), // 10KB should be enough for tx hash response
+        headers: vec![json_header()],
+        transform: Some(transform_context),
+    };
+
+    ic_cdk::println!("   💰 Cycles allocated: {}", cycles);
+
+    // Make the request
+    match http_request(request, cycles).await {
+        Ok((response,)) => {
+            let status_code: u32 = response.status.0.try_into().unwrap_or(500);
+            let body_str = String::from_utf8_lossy(&response.body).to_string();
+
+            ic_cdk::println!("   ✅ Response status: {}", status_code);
+            ic_cdk::println!("   Response body: {}", body_str);
+
+            Ok(HttpOutcallResponse {
+                status: status_code,
+                body: body_str,
+            })
+        }
+        Err((code, msg)) => {
+            let error_msg = format!("HTTP Outcall Failed: {:?} - {}", code, msg);
+            ic_cdk::println!("   ❌ {}", error_msg);
+            Err(error_msg)
+        }
+    }
+}
