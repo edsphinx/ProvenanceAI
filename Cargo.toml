@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "src/brain_canister",
+    "packages/icp",
 ]
 resolver = "2"
 

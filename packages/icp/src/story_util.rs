@@ -30,6 +30,8 @@ use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 ///
 /// # Returns
 /// * `Result<String, String>` - Transaction hash or error
+/// Register IP using mintAndRegisterIp (Phase 4 - SPG NFT)
+#[allow(dead_code)]
 pub async fn register_ip_on_story(
     content_hash: String,
     metadata_uri: String,
@@ -152,6 +154,8 @@ pub async fn register_ip_on_story(
 ///
 /// # Returns
 /// * `Result<bool, String>` - true if signature is valid, false otherwise
+/// Verify ECDSA signature (kept for future use)
+#[allow(dead_code)]
 fn verify_signature(
     message_hash: &[u8],
     signature: &[u8],
@@ -317,6 +321,8 @@ pub fn determine_recovery_id_with_pubkey(
 ///
 /// # Returns
 /// * `Result<Vec<u8>, String>` - ABI-encoded calldata or error
+/// Build calldata for mintAndRegisterIp (Phase 4 - SPG NFT)
+#[allow(dead_code)]
 fn build_mint_and_register_ip_calldata(metadata_uri: String, recipient: &str) -> Result<Vec<u8>, String> {
     // Parse recipient address from hex string
     let recipient_hex = recipient.trim_start_matches("0x");

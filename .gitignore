@@ -72,3 +72,30 @@ lib/forge-std/
 
 .env.dfx
 .env.vps
+
+DONE.md
+REPOSITORY_STRUCTURE_NEW.md
+constellation-metagraph/vps-setup/00_VPS_INSTRUCTIONS.md
+
+# Constellation Network - Sensitive files
+# P12 Keystore files (contain private keys)
+**/*.p12
+constellation-metagraph/euclid-development-environment/source/p12-files/
+constellation-metagraph/euclid-development-environment/infra/shared/genesis/*.p12
+
+# Build artifacts (large JAR files)
+constellation-metagraph/euclid-development-environment/infra/shared/jars/*.jar
+constellation-metagraph/euclid-development-environment/source/project/**/target/
+
+# Constellation logs
+constellation-metagraph/logs/
+constellation-metagraph/euclid-development-environment/**/logs/
+
+# Generated snapshot files
+constellation-metagraph/euclid-development-environment/**/*.snapshot
+constellation-metagraph/euclid-development-environment/**/*.address
+
+# Euclid Framework (85MB - external dependency, not our code)
+constellation-metagraph/euclid-development-environment/
+constellation-metagraph/logs/
+constellation-metagraph/vps-setup/

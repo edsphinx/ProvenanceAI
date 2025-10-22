@@ -167,7 +167,8 @@ fn decompress_public_key(compressed: &[u8]) -> Result<Vec<u8>, String> {
     Ok(uncompressed_bytes.to_vec())
 }
 
-// Helper functions for modular arithmetic
+// Helper functions for modular arithmetic (kept for future cryptographic operations)
+#[allow(dead_code)]
 fn add_mod(a: U256, b: U256, m: U256) -> U256 {
     let sum = a.overflowing_add(b);
     if sum.1 || sum.0 >= m {
@@ -177,6 +178,7 @@ fn add_mod(a: U256, b: U256, m: U256) -> U256 {
     }
 }
 
+#[allow(dead_code)]
 fn mul_mod(a: U256, b: U256, m: U256) -> U256 {
     let (result, overflow) = a.overflowing_mul(b);
     if overflow {
@@ -188,6 +190,7 @@ fn mul_mod(a: U256, b: U256, m: U256) -> U256 {
     }
 }
 
+#[allow(dead_code)]
 fn pow_mod(base: U256, exp: U256, m: U256) -> U256 {
     let mut result = U256::one();
     let mut base = base % m;
@@ -318,13 +321,14 @@ pub fn build_evm_transaction(
 ///
 /// # Returns
 /// * `Result<u8, String>` - Recovery ID (0 or 1) or error
+#[allow(dead_code)]
 async fn calculate_recovery_id(
-    message_hash: &[u8],
-    signature: &[u8],
-    public_key: &[u8],
+    _message_hash: &[u8],
+    _signature: &[u8],
+    _public_key: &[u8],
 ) -> Result<u8, String> {
     // Try recovery ID 0 and 1
-    for recovery_id in 0..2 {
+    for _recovery_id in 0..2 {
         // In production, you would use k256 or libsecp256k1 to recover the public key
         // and compare it with the expected public key
         // For now, we'll try recovery_id = 0 first, then 1 if that fails

@@ -41,6 +41,7 @@ pub fn ip_asset_registry_address() -> H160 {
 
 /// RegistrationWorkflows contract address (SPG - Story Protocol Gateway)
 /// This is the correct contract for registering IP via mintAndRegisterIp
+#[allow(dead_code)]
 pub fn registration_workflows_address() -> H160 {
     H160::from_str("0xbe39E1C756e921BD25DF86e7AAa31106d1eb0424")
         .expect("Invalid RegistrationWorkflows address")
@@ -48,18 +49,21 @@ pub fn registration_workflows_address() -> H160 {
 
 /// Public SPG NFT Contract (Aeneid testnet)
 /// This is a public collection provided by Story Protocol for testing
+#[allow(dead_code)]
 pub fn spg_nft_contract_address() -> H160 {
     H160::from_str("0xc32A8a0FF3beDDDa58393d022aF433e78739FAbc")
         .expect("Invalid SPG NFT Contract address")
 }
 
 /// LicensingModule contract address
+#[allow(dead_code)]
 pub fn licensing_module_address() -> H160 {
     H160::from_str("0x04fbd8a2e56dd85CFD5500A4A4DfA955B9f1dE6f")
         .expect("Invalid LicensingModule address")
 }
 
 /// RoyaltyModule contract address
+#[allow(dead_code)]
 pub fn royalty_module_address() -> H160 {
     // Placeholder - replace with actual address
     H160::from_str("0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086")
@@ -67,6 +71,7 @@ pub fn royalty_module_address() -> H160 {
 }
 
 /// DisputeModule contract address
+#[allow(dead_code)]
 pub fn dispute_module_address() -> H160 {
     // Placeholder - replace with actual address
     H160::from_str("0x9b7A9c70AFF961C799110954fc06F3093aeb94C5")
@@ -80,6 +85,7 @@ pub fn dispute_module_address() -> H160 {
 /// Parent AI Model IP ID on Story Protocol
 /// This must be set after registering the AI Model as an IP Asset
 /// Run: npx ts-node scripts/register_ai_agent.ts
+#[allow(dead_code)]
 pub const PARENT_AI_MODEL_IP_ID: &str = "REPLACE_AFTER_REGISTRATION";
 
 // ==============================================================================
@@ -95,15 +101,19 @@ pub const ECDSA_KEY_NAME: &str = "dfx_test_key";
 // ==============================================================================
 
 /// ckBTC Ledger Canister ID (Testnet)
+#[allow(dead_code)]
 pub const CKBTC_LEDGER_CANISTER_ID: &str = "mxzaz-hqaaa-aaaar-qaada-cai";
 
 /// ckBTC Minter Canister ID (Testnet)
+#[allow(dead_code)]
 pub const CKBTC_MINTER_CANISTER_ID: &str = "mqygn-kiaaa-aaaar-qaadq-cai";
 
 /// Payment amount required for IP generation (in satoshis)
+#[allow(dead_code)]
 pub const REQUIRED_PAYMENT_SATOSHIS: u64 = 100_000; // 0.001 ckBTC
 
 /// Royalty percentage for parent AI model (10%)
+#[allow(dead_code)]
 pub const ROYALTY_PERCENTAGE: u64 = 10;
 
 // ==============================================================================

@@ -8,6 +8,8 @@ use crate::http_util::{json_header, make_http_request};
 use ic_cdk::api::management_canister::http_request::HttpMethod;
 use serde_json::json;
 use sha3::{Digest, Keccak256};
+// Imports for future signature verification features
+#[allow(unused_imports)]
 use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use std::str::FromStr;
 
