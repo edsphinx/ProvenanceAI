@@ -62,6 +62,9 @@ pub struct GenerationOutput {
     pub image_url: String,
     pub content_hash: String,
     pub story_ip_id: String,
+    pub story_tx_hash: String,
+    pub story_nft_contract: String,
+    pub story_token_id: u64,
     pub constellation_tx_hash: String,
     pub ai_model_id: String,
 }
@@ -302,24 +305,8 @@ async fn generate_and_register_ip(input: GenerationInput) -> Result<GenerationOu
     ic_cdk::println!("   ✅ Image URL: {}", image_url);
     ic_cdk::println!("   ✅ Content Hash: {}", content_hash);
 
-    // STEP 2: Get NFT contract address (must be deployed first)
-    ic_cdk::println!("\n🎨 STEP 2: Checking NFT contract...");
-    let nft_contract_address = STATE.with(|state| {
-        state.borrow().nft_contract_address.clone()
-    });
-
-    let nft_contract = match nft_contract_address {
-        Some(addr) => {
-            ic_cdk::println!("   ✅ NFT Contract: {}", addr);
-            addr
-        }
-        None => {
-            return Err("NFT contract not deployed yet. Please call deploy_nft_contract() first.".to_string());
-        }
-    };
-
-    // STEP 3: Mint NFT
-    ic_cdk::println!("\n🎨 STEP 3: Minting NFT...");
+    // STEP 2: Register IP on Story Protocol using SPG (Mint + Register in one tx)
+    ic_cdk::println!("\n📜 STEP 2: Registering IP on Story Protocol (SPG - Mint & Register)...");
 
     // Create metadata URI (for now, use placeholder - in production, upload to IPFS)
     let metadata_uri = format!(
@@ -327,31 +314,13 @@ async fn generate_and_register_ip(input: GenerationInput) -> Result<GenerationOu
         content_hash
     );
 
-    let token_id = match nft_deployment::mint_nft(
-        nft_contract.clone(),
+    let (story_tx_hash, parsed_values) = match story_util::register_ip_on_story(
         content_hash.clone(),
         metadata_uri,
     ).await {
-        Ok(token_id) => {
-            ic_cdk::println!("   ✅ NFT minted! Token ID: {}", token_id);
-            token_id
-        }
-        Err(e) => {
-            ic_cdk::println!("   ❌ NFT minting failed: {}", e);
-            return Err(format!("Failed to mint NFT: {}", e));
-        }
-    };
-
-    // STEP 4: Register NFT as IP Asset on Story Protocol
-    ic_cdk::println!("\n📜 STEP 4: Registering NFT as IP Asset on Story Protocol...");
-
-    let story_ip_id = match story_util::register_nft_as_ip(
-        nft_contract.clone(),
-        token_id,
-    ).await {
-        Ok(tx_hash) => {
+        Ok((tx_hash, values)) => {
             ic_cdk::println!("   ✅ Transaction Hash: {}", tx_hash);
-            tx_hash
+            (tx_hash, values)
         }
         Err(e) => {
             ic_cdk::println!("   ❌ Story Protocol registration failed: {}", e);
@@ -359,15 +328,33 @@ async fn generate_and_register_ip(input: GenerationInput) -> Result<GenerationOu
         }
     };
 
-    // STEP 5: Log on Constellation DAG
-    ic_cdk::println!("\n🌌 STEP 5: Logging proof on Constellation DAG...");
+    // Extract SPG NFT contract address from config (used for Constellation proof)
+    let spg_nft_contract = {
+        let addr = config::spg_nft_contract_address();
+        format!("0x{}", hex::encode(addr.to_fixed_bytes()))
+    };
+
+    // Use parsed values if available, otherwise fallback to placeholders
+    let (story_ip_id, token_id) = match parsed_values {
+        Some((ip_id, tid)) => {
+            ic_cdk::println!("   ✅ Using parsed IP ID and Token ID from receipt");
+            (ip_id, tid)
+        }
+        None => {
+            ic_cdk::println!("   ⚠️  Using placeholder values (receipt parsing failed)");
+            (story_tx_hash.clone(), 0u64)
+        }
+    };
+
+    // STEP 3: Log on Constellation DAG
+    ic_cdk::println!("\n🌌 STEP 3: Logging proof on Constellation DAG...");
 
     let proof = constellation_util::ProofOfGeneration {
         content_hash: content_hash.clone(),
         model_name: "deepseek-chat".to_string(),
         timestamp: ic_cdk::api::time(),
         story_ip_id: story_ip_id.clone(),
-        nft_contract: nft_contract.clone(),
+        nft_contract: spg_nft_contract.clone(),
         nft_token_id: token_id,
         generator_address: "ICP-Canister".to_string(), // Placeholder for canister identity
     };
@@ -397,6 +384,9 @@ async fn generate_and_register_ip(input: GenerationInput) -> Result<GenerationOu
         image_url,
         content_hash,
         story_ip_id,
+        story_tx_hash,
+        story_nft_contract: spg_nft_contract,
+        story_token_id: token_id,
         constellation_tx_hash,
         ai_model_id: "deepseek-chat".to_string(),
     })

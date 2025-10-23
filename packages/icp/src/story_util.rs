@@ -31,11 +31,12 @@ use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 /// # Returns
 /// * `Result<String, String>` - Transaction hash or error
 /// Register IP using mintAndRegisterIp (Phase 4 - SPG NFT)
+/// Returns (tx_hash, Option<(ipId, tokenId)>)
 #[allow(dead_code)]
 pub async fn register_ip_on_story(
     content_hash: String,
     metadata_uri: String,
-) -> Result<String, String> {
+) -> Result<(String, Option<(String, u64)>), String> {
     ic_cdk::println!("   📜 Registering IP on Story Protocol...");
     ic_cdk::println!("      Content Hash: {}", content_hash);
     ic_cdk::println!("      Metadata URI: {}", metadata_uri);
@@ -136,9 +137,40 @@ pub async fn register_ip_on_story(
     ic_cdk::println!("   ✅ NFT minted and IP registered! TX Hash: {}", tx_hash_result);
     ic_cdk::println!("   🔍 View on Story Explorer:");
     ic_cdk::println!("      https://aeneid.storyscan.io/tx/{}", tx_hash_result);
-    ic_cdk::println!("   💡 Note: Transaction returns (ipId, tokenId) on success");
 
-    Ok(tx_hash_result)
+    // Step 9: Get transaction receipt and parse return values
+    ic_cdk::println!("   ⏳ Waiting for transaction receipt...");
+    let parsed_values = match get_transaction_receipt(&tx_hash_result).await {
+        Ok(receipt) => {
+            ic_cdk::println!("   ✅ Receipt obtained!");
+            ic_cdk::println!("      Status: {}", receipt.status);
+            ic_cdk::println!("      Block Number: {}", receipt.block_number);
+            ic_cdk::println!("      Gas Used: {}", receipt.gas_used);
+
+            // Parse the return values from logs
+            // mintAndRegisterIp returns (address ipId, uint256 tokenId)
+            // These should be in the receipt logs
+            match parse_mint_and_register_return_values(&receipt) {
+                Some((ip_id, token_id)) => {
+                    ic_cdk::println!("   📝 Parsed return values:");
+                    ic_cdk::println!("      IP ID: {}", ip_id);
+                    ic_cdk::println!("      Token ID: {}", token_id);
+                    Some((ip_id, token_id))
+                }
+                None => {
+                    ic_cdk::println!("   ⚠️  Could not parse return values from receipt");
+                    None
+                }
+            }
+        }
+        Err(e) => {
+            ic_cdk::println!("   ⚠️  Could not get receipt: {}", e);
+            ic_cdk::println!("   ℹ️  Transaction may still be pending");
+            None
+        }
+    };
+
+    Ok((tx_hash_result, parsed_values))
 }
 
 // ==============================================================================
@@ -602,4 +634,184 @@ fn build_ip_asset_registry_register_calldata(
     calldata.extend_from_slice(&params);
 
     Ok(calldata)
+}
+
+// ==============================================================================
+// Transaction Receipt Parsing
+// ==============================================================================
+
+/// Structure to hold transaction receipt data
+#[derive(Debug)]
+pub struct TransactionReceipt {
+    pub status: String,
+    pub block_number: String,
+    pub gas_used: String,
+    pub logs: Vec<serde_json::Value>,
+}
+
+/// Get transaction receipt from Story Protocol RPC
+///
+/// # Arguments
+/// * `tx_hash` - Transaction hash (with 0x prefix)
+///
+/// # Returns
+/// * `Result<TransactionReceipt, String>` - Receipt or error
+async fn get_transaction_receipt(tx_hash: &str) -> Result<TransactionReceipt, String> {
+    let payload = json!({
+        "jsonrpc": "2.0",
+        "method": "eth_getTransactionReceipt",
+        "params": [tx_hash],
+        "id": 1
+    });
+
+    let headers = vec![json_header()];
+
+    let response_body = make_http_request(
+        STORY_RPC_URL.to_string(),
+        HttpMethod::POST,
+        headers,
+        Some(payload.to_string().into_bytes()),
+    )
+    .await?;
+
+    let response_str = String::from_utf8(response_body)
+        .map_err(|e| format!("Failed to parse response as UTF-8: {}", e))?;
+
+    let response_json: serde_json::Value = serde_json::from_str(&response_str)
+        .map_err(|e| format!("Failed to parse JSON: {}", e))?;
+
+    // Check for error
+    if let Some(error) = response_json.get("error") {
+        return Err(format!("RPC error: {}", error));
+    }
+
+    let result = response_json
+        .get("result")
+        .ok_or("No result in response")?;
+
+    // If result is null, transaction is still pending
+    if result.is_null() {
+        return Err("Transaction pending".to_string());
+    }
+
+    // Extract receipt fields
+    let status = result
+        .get("status")
+        .and_then(|s| s.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    let block_number = result
+        .get("blockNumber")
+        .and_then(|s| s.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    let gas_used = result
+        .get("gasUsed")
+        .and_then(|s| s.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    let logs = result
+        .get("logs")
+        .and_then(|l| l.as_array())
+        .map(|arr| arr.clone())
+        .unwrap_or_default();
+
+    Ok(TransactionReceipt {
+        status,
+        block_number,
+        gas_used,
+        logs,
+    })
+}
+
+/// Parse ipId and tokenId from mintAndRegisterIp transaction receipt
+///
+/// The function returns (address ipId, uint256 tokenId) which should be
+/// encoded in the logs. We look for specific event signatures.
+///
+/// # Arguments
+/// * `receipt` - The transaction receipt
+///
+/// # Returns
+/// * `Option<(String, u64)>` - (ipId, tokenId) or None if parsing fails
+fn parse_mint_and_register_return_values(receipt: &TransactionReceipt) -> Option<(String, u64)> {
+    // Look for IPRegistered event or Transfer events
+    // IPRegistered(address indexed ipId, uint256 indexed chainId, address indexed tokenContract, uint256 tokenId, ...)
+    // Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+
+    // For SPG, we need to find:
+    // 1. Transfer event from SPG NFT contract to get tokenId
+    // 2. IPRegistered event to get ipId
+
+    let mut token_id: Option<u64> = None;
+    let mut ip_id: Option<String> = None;
+
+    // SPG NFT contract address
+    let spg_nft_address = config::spg_nft_contract_address();
+    let spg_nft_hex = format!("0x{}", hex::encode(spg_nft_address.to_fixed_bytes())).to_lowercase();
+
+    for log in &receipt.logs {
+        let address = log
+            .get("address")
+            .and_then(|a| a.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        let topics = log
+            .get("topics")
+            .and_then(|t| t.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+
+        // Check if this is a Transfer event from SPG NFT contract
+        // Transfer event signature: keccak256("Transfer(address,address,uint256)") = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+        if address == spg_nft_hex && !topics.is_empty() {
+            let event_sig = &topics[0];
+            if event_sig == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" {
+                // Topic 3 is the tokenId (indexed)
+                if topics.len() >= 4 {
+                    let token_id_hex = topics[3].trim_start_matches("0x");
+                    if let Ok(id) = u64::from_str_radix(token_id_hex, 16) {
+                        token_id = Some(id);
+                        ic_cdk::println!("      Found Transfer event: tokenId = {}", id);
+                    }
+                }
+            }
+        }
+
+        // Check for IPRegistered event
+        // IPRegistered event signature: keccak256("IPRegistered(address,uint256,address,uint256,...)")
+        // Topic 1 is the ipId (indexed)
+        if !topics.is_empty() {
+            let event_sig = &topics[0];
+            // IPRegistered signature may vary, but ipId is typically in topic[1]
+            if event_sig.starts_with("0x") && topics.len() >= 2 {
+                // Try to extract address from topic[1]
+                let potential_ip_id = &topics[1];
+                // Convert indexed address (32 bytes) to address (20 bytes)
+                if potential_ip_id.len() == 66 {
+                    // Take last 40 chars (20 bytes)
+                    let addr = format!("0x{}", &potential_ip_id[26..]);
+                    // Validate it looks like an address
+                    if addr.len() == 42 {
+                        ip_id = Some(addr.clone());
+                        ic_cdk::println!("      Found potential ipId in logs: {}", addr);
+                    }
+                }
+            }
+        }
+    }
+
+    // Return both if found
+    match (ip_id, token_id) {
+        (Some(id), Some(tid)) => Some((id, tid)),
+        _ => None,
+    }
 }
