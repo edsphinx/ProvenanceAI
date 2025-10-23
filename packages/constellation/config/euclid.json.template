@@ -1,0 +1,85 @@
+{
+  "project_name": "provenanceai-metagraph",
+  "version": "1.0.0",
+  "tessellation_version": "3.4.0-rc.13",
+  "network": "integrationnet",
+  "ref_type": "tag",
+  "framework": {
+    "name": "currency",
+    "version": "v3.5.0",
+    "ref_type": "tag",
+    "modules": ["data"]
+  },
+  "layers": {
+    "global-l0": {
+      "name": "Global L0",
+      "description": "Global L0 layer for local development"
+    },
+    "dag-l1": {
+      "name": "DAG L1",
+      "description": "DAG L1 layer for local development"
+    },
+    "metagraph-l0": {
+      "name": "ProvenanceAI Metagraph L0",
+      "description": "Metagraph L0 layer"
+    },
+    "data-l1": {
+      "name": "ProvenanceAI Data Layer",
+      "description": "AI-generated content proof logging for cross-chain IP protection"
+    }
+  },
+  "p12_files": {
+    "genesis": {
+      "alias": "genesis",
+      "password": "${CONSTELLATION_GENESIS_PASSWORD}"
+    }
+  },
+  "nodes": [
+    {
+      "name": "metagraph-node-1",
+      "key_file": {
+        "name": "genesis.p12",
+        "alias": "genesis",
+        "password": "${CONSTELLATION_GENESIS_PASSWORD}"
+      }
+    },
+    {
+      "name": "metagraph-node-2",
+      "key_file": {
+        "name": "validator-1.p12",
+        "alias": "validator-1",
+        "password": "${CONSTELLATION_VALIDATOR_PASSWORD}"
+      }
+    },
+    {
+      "name": "metagraph-node-3",
+      "key_file": {
+        "name": "validator-2.p12",
+        "alias": "validator-2",
+        "password": "${CONSTELLATION_VALIDATOR_PASSWORD}"
+      }
+    }
+  ],
+  "snapshot_fees": {
+    "owner": {
+      "key_file": {
+        "name": "token-key.p12",
+        "alias": "token-key",
+        "password": "${CONSTELLATION_TOKEN_KEY_PASSWORD}"
+      }
+    },
+    "staking": {
+      "key_file": {
+        "name": "token-key-1.p12",
+        "alias": "token-key-1",
+        "password": "${CONSTELLATION_TOKEN_KEY_PASSWORD}"
+      }
+    }
+  },
+  "deploy": {
+    "monitoring": {
+      "enabled": false
+    }
+  },
+  "start_grafana_container": true
+}
