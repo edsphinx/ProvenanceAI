@@ -99,3 +99,8 @@ constellation-metagraph/euclid-development-environment/**/*.address
 constellation-metagraph/euclid-development-environment/
 constellation-metagraph/logs/
 constellation-metagraph/vps-setup/
+# Local server instance
+VPSServer/
+
+# Local deployment logs
+deployments/local_deployment_*.txt
