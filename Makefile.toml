@@ -1,0 +1,182 @@
+# Makefile.toml - cargo-make configuration
+# Rust-native task runner (install with: cargo install cargo-make)
+# Usage: cargo make <task>
+
+[config]
+default_to_workspace = false
+
+[tasks.help]
+description = "Show available tasks"
+command = "cargo"
+args = ["make", "--list-all-steps"]
+
+# ============================================================================
+# Testing Tasks
+# ============================================================================
+
+[tasks.test]
+description = "Run all tests (ICP + Story + Constellation)"
+script = ["bash tests/run-all-tests.sh"]
+
+[tasks.test-icp]
+description = "Run Rust tests only"
+cwd = "packages/icp"
+command = "cargo"
+args = ["test"]
+
+[tasks.test-story]
+description = "Run Solidity tests"
+cwd = "packages/story"
+command = "forge"
+args = ["test"]
+
+[tasks.test-story-verbose]
+description = "Run Solidity tests with verbose output"
+cwd = "packages/story"
+command = "forge"
+args = ["test", "-vvv"]
+
+# ============================================================================
+# Build Tasks
+# ============================================================================
+
+[tasks.build]
+description = "Build all components"
+script = ["bash scripts/build_all.sh"]
+
+[tasks.build-icp]
+description = "Build ICP canister"
+command = "dfx"
+args = ["build", "brain_canister"]
+
+[tasks.build-story]
+description = "Build Story contracts"
+cwd = "packages/story"
+command = "forge"
+args = ["build"]
+
+# ============================================================================
+# Deployment Tasks
+# ============================================================================
+
+[tasks.deploy-local]
+description = "Deploy to local dfx network"
+script = ["bash scripts/deploy_all.sh"]
+
+[tasks.deploy-playground]
+description = "Deploy to ICP Playground (free, 20min expiry)"
+script = ["bash scripts/deploy_playground.sh"]
+
+[tasks.deploy-mainnet]
+description = "Deploy to ICP mainnet (requires DFX_PASSWORD env var)"
+script = ["bash scripts/deploy_mainnet.sh"]
+
+# ============================================================================
+# Network Management
+# ============================================================================
+
+[tasks.start]
+description = "Start local dfx network in background"
+command = "dfx"
+args = ["start", "--background"]
+
+[tasks.stop]
+description = "Stop local dfx network"
+command = "dfx"
+args = ["stop"]
+
+[tasks.clean]
+description = "Clean all build artifacts"
+script = [
+    "dfx stop 2>/dev/null || true",
+    "rm -rf .dfx",
+    "cd packages/icp && cargo clean",
+    "cd packages/story && forge clean",
+    "echo '✅ All artifacts cleaned'"
+]
+
+# ============================================================================
+# Canister Management
+# ============================================================================
+
+[tasks.status]
+description = "Show canister status"
+command = "dfx"
+args = ["canister", "status", "brain_canister"]
+
+[tasks.logs]
+description = "Show canister logs"
+command = "dfx"
+args = ["canister", "logs", "brain_canister"]
+
+[tasks.canister-id]
+description = "Show canister ID"
+command = "dfx"
+args = ["canister", "id", "brain_canister"]
+
+[tasks.address]
+description = "Show canister EVM address"
+command = "dfx"
+args = ["canister", "call", "brain_canister", "get_canister_evm_address"]
+
+# ============================================================================
+# E2E Testing
+# ============================================================================
+
+[tasks.e2e]
+description = "Run end-to-end integration test"
+command = "dfx"
+args = [
+    "canister", "call", "brain_canister", "generate_and_register_ip",
+    "(record { prompt = \"Test image\"; metadata = record { title = \"E2E Test\"; description = \"Integration test\"; tags = vec {\"test\"} }; })"
+]
+
+# ============================================================================
+# VPS Constellation
+# ============================================================================
+
+[tasks.vps-status]
+description = "Check VPS Constellation status"
+script = [
+    "sshpass -p 'SSH_PASSWORD_REDACTED' ssh root@198.144.183.32 'cd /root/provenanceai-deployment && bash check_status.sh'"
+]
+
+[tasks.vps-logs]
+description = "Check VPS Constellation logs"
+script = [
+    "sshpass -p 'SSH_PASSWORD_REDACTED' ssh root@198.144.183.32 'cd /root/provenanceai-deployment && bash check_logs.sh'"
+]
+
+# ============================================================================
+# Code Quality
+# ============================================================================
+
+[tasks.fmt]
+description = "Format Rust code"
+cwd = "packages/icp"
+command = "cargo"
+args = ["fmt"]
+
+[tasks.clippy]
+description = "Run Rust linter"
+cwd = "packages/icp"
+command = "cargo"
+args = ["clippy", "--", "-D", "warnings"]
+
+[tasks.check]
+description = "Run cargo check"
+cwd = "packages/icp"
+command = "cargo"
+args = ["check"]
+
+# ============================================================================
+# Compound Tasks
+# ============================================================================
+
+[tasks.ci]
+description = "Run CI pipeline (format, check, test)"
+dependencies = ["fmt", "clippy", "test"]
+
+[tasks.full-deploy]
+description = "Full deployment workflow (build, test, deploy)"
+dependencies = ["build", "test", "deploy-local"]

@@ -1,0 +1,19 @@
+{
+  "canisters": {
+    "brain_canister": {
+      "type": "rust",
+      "package": "brain_canister",
+      "candid": "packages/icp/brain_canister.did",
+      "build": "cd packages/icp && cargo build --target wasm32-unknown-unknown --release",
+      "wasm": "packages/icp/target/wasm32-unknown-unknown/release/brain_canister.wasm"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env.dfx",
+  "version": 1
+}
