@@ -226,6 +226,11 @@ log_success "Canisters created"
 echo ""
 log_info "Building brain_canister (Rust)..."
 
+# Build from packages/icp
+cd packages/icp
+cargo build --target wasm32-unknown-unknown --release
+cd ../..
+
 dfx build brain_canister --network $NETWORK
 
 log_success "Build complete"

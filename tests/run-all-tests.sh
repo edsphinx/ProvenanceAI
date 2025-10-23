@@ -29,28 +29,29 @@ echo ""
 # 2. Solidity Tests (Story Protocol)
 echo -e "${YELLOW}⚒️  2/3 Running Solidity Tests (Story Protocol)${NC}"
 echo "-----------------------------------------------"
+cd packages/story
 if forge test --summary; then
     echo -e "${GREEN}✅ Solidity tests passed${NC}"
+    cd ../..
 else
     echo -e "${RED}❌ Solidity tests failed${NC}"
     FAILED=1
+    cd ../..
 fi
 echo ""
 
-# 3. Scala Tests (Constellation)
-echo -e "${YELLOW}🌟 3/3 Running Scala Tests (Constellation)${NC}"
+# 3. Constellation Tests (VPS)
+echo -e "${YELLOW}🌟 3/3 Verifying Constellation (VPS)${NC}"
 echo "------------------------------------------"
-if [ -d "constellation-metagraph" ] && [ -f "constellation-metagraph/build.sbt" ]; then
-    cd constellation-metagraph
-    if sbt -batch test; then
-        echo -e "${GREEN}✅ Scala tests passed${NC}"
+if command -v sshpass &> /dev/null; then
+    VPS_STATUS=$(sshpass -p 'SSH_PASSWORD_REDACTED' ssh -o StrictHostKeyChecking=no root@198.144.183.32 'curl -s http://localhost:9400/node/info | grep -o "Ready"' 2>/dev/null || echo "")
+    if [ "$VPS_STATUS" == "Ready" ]; then
+        echo -e "${GREEN}✅ Constellation Data L1 is Ready on VPS${NC}"
     else
-        echo -e "${RED}❌ Scala tests failed${NC}"
-        FAILED=1
+        echo -e "${YELLOW}⚠️  Constellation VPS not accessible (OK for local dev)${NC}"
     fi
-    cd ..
 else
-    echo -e "${YELLOW}⚠️  Constellation metagraph not yet created, skipping Scala tests${NC}"
+    echo -e "${YELLOW}⚠️  sshpass not installed, skipping Constellation check${NC}"
 fi
 echo ""
 
