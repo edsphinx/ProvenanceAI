@@ -1,0 +1,37 @@
+type CanisterConfig = record {
+  deepseek_api_key : text;
+  replicate_api_key : opt text;
+  constellation_metagraph_url : text;
+};
+
+type IPMetadata = record {
+  title : text;
+  description : text;
+  tags : vec text;
+};
+
+type GenerationInput = record {
+  prompt : text;
+  metadata : IPMetadata;
+};
+
+type GenerationOutput = record {
+  image_url : text;
+  content_hash : text;
+  story_ip_id : text;
+  constellation_tx_hash : text;
+  ai_model_id : text;
+};
+
+service : (CanisterConfig) -> {
+  "set_owner" : (principal) -> ();
+  "get_owner" : () -> (principal) query;
+  "is_configured" : () -> (bool) query;
+  "update_config" : (CanisterConfig) -> ();
+  "get_constellation_url" : () -> (text) query;
+  "generate_and_register_ip" : (GenerationInput) -> (variant { Ok : GenerationOutput; Err : text });
+  "raise_dispute" : (text, text) -> (variant { Ok : GenerationOutput; Err : text });
+  "get_canister_evm_address" : () -> (text);
+  "set_nft_contract_address" : (text) -> ();
+  "get_nft_contract_address" : () -> (opt text) query;
+}

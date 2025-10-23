@@ -3,12 +3,7 @@
     "brain_canister": {
       "type": "rust",
       "package": "brain_canister",
-      "candid": "src/brain_canister/brain_canister.did"
-    },
-    "frontend_canister": {
-      "type": "assets",
-      "source": ["dist/"],
-      "dependencies": ["brain_canister"]
+      "candid": "brain_canister.did"
     }
   },
   "defaults": {

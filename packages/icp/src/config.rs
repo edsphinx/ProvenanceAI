@@ -16,7 +16,7 @@ use std::str::FromStr;
 // ==============================================================================
 
 /// Story Protocol Aeneid Testnet RPC URL
-/// Official Documentation: https://docs.story.foundation/network/connect/aeneid
+/// Using official Story RPC (proven to work in Phase 2)
 pub const STORY_RPC_URL: &str = "https://aeneid.storyrpc.io";
 
 /// Story Protocol Aeneid Testnet Chain ID
@@ -93,8 +93,8 @@ pub const PARENT_AI_MODEL_IP_ID: &str = "REPLACE_AFTER_REGISTRATION";
 // ==============================================================================
 
 /// ECDSA key for signing EVM transactions
-/// Use "dfx_test_key" for local/testnet, "test_key_1" for mainnet
-pub const ECDSA_KEY_NAME: &str = "dfx_test_key";
+/// Use "test_key_1" for playground/mainnet, "dfx_test_key" for local only
+pub const ECDSA_KEY_NAME: &str = "test_key_1";
 
 // ==============================================================================
 // ckBTC Configuration (Testnet)

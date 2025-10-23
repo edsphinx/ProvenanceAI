@@ -217,8 +217,8 @@ pub async fn get_nonce_from_blockchain() -> Result<u64, String> {
     // Get our EVM address
     let evm_address = evm_util::get_canister_evm_address().await?;
 
-    // Alchemy RPC URL for Story Protocol Aeneid
-    let rpc_url = "https://story-network.g.alchemy.com/public/aeneid";
+    // Story Protocol RPC URL from config
+    let rpc_url = config::STORY_RPC_URL;
 
     // Build JSON-RPC request for eth_getTransactionCount
     let payload = serde_json::json!({
@@ -481,7 +481,7 @@ fn get_nft_contract_address() -> Option<String> {
     STATE.with(|state| state.borrow().nft_contract_address.clone())
 }
 
-/// Manually set NFT contract address (for recovery if deployment succeeded but state wasn't updated)
+/// Set NFT contract address manually (for already deployed contracts)
 #[ic_cdk::update]
 fn set_nft_contract_address(address: String) {
     STATE.with(|state| {
